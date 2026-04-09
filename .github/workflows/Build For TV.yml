@@ -26,10 +26,9 @@ on:
 jobs:
   tv:
     if: ${{ (github.event_name == 'pull_request' && github.repository == 'bggRGjQaUbCoE/PiliPlus') || github.event.inputs.build_tv == 'true' }}
-    name: Build TV Android
+    name: Release TV
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    permissions: write-all
 
     steps:
       - name: Checkout
@@ -37,7 +36,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v5
         with:
           distribution: "zulu"
@@ -59,7 +58,7 @@ jobs:
         run: lib/scripts/patch.ps1 android
         continue-on-error: true
 
-      - name: Write signing key
+      - name: Write key
         if: github.event_name == 'workflow_dispatch'
         run: |
           if [ -n "${{ secrets.SIGN_KEYSTORE_BASE64 }}" ]; then
@@ -77,15 +76,15 @@ EOF
         shell: pwsh
         run: lib/scripts/build.ps1 android
 
-      - name: Build TV Release APK
+      - name: Build Release APK
         if: github.event_name == 'workflow_dispatch'
         run: flutter build apk --release --flavor tv --split-per-abi --dart-define-from-file=pili_release.json --pub
 
-      - name: Build TV Dev APK (PR)
+      - name: Build Dev APK (PR)
         if: github.event_name == 'pull_request'
         run: flutter build apk --release --flavor tv --split-per-abi --android-project-arg dev=1 --pub
 
-      - name: Rename APKs
+      - name: Rename APK
         run: |
           cd build/app/outputs/flutter-apk
           for file in app-tv-*-release.apk; do
@@ -95,7 +94,7 @@ EOF
             fi
           done
 
-      - name: Create GitHub Release
+      - name: Create Release
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
