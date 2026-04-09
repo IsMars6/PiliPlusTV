@@ -1,102 +1,128 @@
-name: Build For TV
+name: Build For Android
 
 on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths-ignore:
+      - "**.md"
   workflow_dispatch:
     inputs:
-      build_tv:
-        description: "Build TV Android"
+      build_android:
+        description: "Build Android"
         required: false
         default: true
         type: boolean
 
       tag:
-        description: "版本号（例如：v2.0.3，填写后将自动创建 Release）"
+        description: "版本号(例如v1.0，填写将创建Release)"
         required: false
         default: ""
         type: string
 
 jobs:
-  build-tv:
-    if: ${{ inputs.build_tv }}
-    name: Build TV Android Release
+  android:
+    if: ${{ (github.event_name == 'pull_request' && github.repository == 'bggRGjQaUbCoE/PiliPlus') || github.event.inputs.build_android == 'true' }}
+    name: Release Android
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    permissions: write-all
 
     steps:
-      - name: Checkout code
+      - name: 代码迁出
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Setup Java 17
+      - name: 构建Java环境
         uses: actions/setup-java@v5
         with:
-          distribution: zulu
-          java-version: 17
-          cache: gradle
+          distribution: "zulu"
+          java-version: "17"
+          cache: "gradle"
           cache-dependency-path: |
             android/*.gradle*
             android/**/gradle-wrapper.properties
 
-      - name: Setup Flutter
+      - name: 安装Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version-file: pubspec.yaml
           cache: true
 
-      - name: Apply Android patch
+      - name: Apply Patch
         shell: pwsh
         run: lib/scripts/patch.ps1 android
         continue-on-error: true
 
-      - name: Create signing config
-        if: inputs.tag != ''
+      # 👇 这里是修复重点：无缩进EOF，避免语法错误
+      - name: Write key
+        if: github.event_name == 'workflow_dispatch'
         run: |
           if [ -n "${{ secrets.SIGN_KEYSTORE_BASE64 }}" ]; then
-            mkdir -p android/app
             echo "${{ secrets.SIGN_KEYSTORE_BASE64 }}" | base64 --decode > android/app/key.jks
-            
-            cat > android/key.properties << EOF
-            storeFile=key.jks
-            storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-            keyAlias=${{ secrets.KEY_ALIAS }}
-            keyPassword=${{ secrets.KEY_PASSWORD }}
-            EOF
+            cat > android/key.properties <<EOF
+storeFile=key.jks
+storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+keyAlias=${{ secrets.KEY_ALIAS }}
+keyPassword=${{ secrets.KEY_PASSWORD }}
+EOF
           fi
 
-      - name: Build version & environment
+      - name: Set and Extract version
+        if: github.event_name == 'workflow_dispatch'
         shell: pwsh
         run: lib/scripts/build.ps1 android
 
-      - name: Flutter build TV APK
-        run: flutter build apk --release --flavor tv --split-per-abi --dart-define-from-file=pili_release.json --pub
+      - name: Flutter Build Release Apk
+        if: github.event_name == 'workflow_dispatch'
+        run: flutter build apk --release --split-per-abi --dart-define-from-file=pili_release.json --pub
 
-      - name: List built APKs
-        run: ls -lh build/app/outputs/flutter-apk/
+      - name: Flutter Build Dev Apk
+        if: github.event_name == 'pull_request'
+        run: |
+          flutter build apk --release --split-per-abi --android-project-arg dev=1 --pub
 
-      - name: Rename APKs
+      # 👇 增加文件存在判断，防止找不到apk报错
+      - name: Rename
         run: |
           cd build/app/outputs/flutter-apk
-          for file in app-tv-*.apk; do
-            if [[ -f "$file" ]]; then
-              abi=$(grep -Eo 'arm64-v8a|armeabi-v7a|x86_64' <<< "$file")
-              mv -v "$file" "../../../../PiliPlus_TV_${{ env.version }}_${abi}.apk"
+          for file in app-*-release.apk; do
+            if [ -f "$file" ]; then
+              abi=$(echo "$file" | sed -E 's|.*app-(.*)-release\.apk|\1|')
+              mv -v "$file" "../../../PiliPlus_android_${{ env.version }}_${abi}.apk"
             fi
           done
+        shell: bash
 
-      - name: Upload all TV APKs as artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: PiliPlus_TV_All_APKs
-          path: PiliPlus_TV_*.apk
-          if-no-files-found: error
-
-      - name: Create GitHub Release
-        if: inputs.tag != ''
+      - name: Release
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ inputs.tag }}
-          name: "PiliPlus TV ${{ inputs.tag }}"
-          files: PiliPlus_TV_*.apk
+          tag_name: ${{ github.event.inputs.tag }}
+          name: ${{ github.event.inputs.tag }}
+          files: PiliPlus_android_*.apk
+
+      - name: 上传 arm64-v8a
+        uses: actions/upload-artifact@v7
+        with:
+          archive: false
+          name: Android_arm64-v8a
+          path: PiliPlus_android_*_arm64-v8a.apk
+
+      - name: 上传 armeabi-v7a
+        uses: actions/upload-artifact@v7
+        with:
+          archive: false
+          name: Android_armeabi-v7a
+          path: PiliPlus_android_*_armeabi-v7a.apk
+
+      - name: 上传 x86_64
+        uses: actions/upload-artifact@v7
+        with:
+          archive: false
+          name: Android_x86_64
+          path: PiliPlus_android_*_x86_64.apk
