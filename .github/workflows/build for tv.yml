@@ -10,7 +10,7 @@ on:
         type: boolean
 
       tag:
-        description: "tag"
+        description: "版本号（例如：v1.0.0，填写后将自动创建 Release）"
         required: false
         default: ""
         type: string
