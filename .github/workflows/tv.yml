@@ -6,6 +6,8 @@ on:
 jobs:
   build-tv:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,12 +20,26 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Build TV APK
-        run: flutter build apk --release --flavor tv
+      - name: Build TV APK (split by ABI)
+        run: flutter build apk --release --flavor tv --split-per-abi
 
-      - name: Upload TV APK
+      - name: Upload arm64-v8a APK
         uses: actions/upload-artifact@v4
         with:
-          name: piliplus-tv-apk
-          path: build/app/outputs/flutter-apk/app-tv-release.apk
+          name: piliplus-tv-arm64-v8a
+          path: build/app/outputs/flutter-apk/app-tv-release-arm64-v8a.apk
+          retention-days: 30
+
+      - name: Upload armeabi-v7a APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: piliplus-tv-armeabi-v7a
+          path: build/app/outputs/flutter-apk/app-tv-release-armeabi-v7a.apk
+          retention-days: 30
+
+      - name: Upload x86_64 APK
+        uses: upload-artifact@v4
+        with:
+          name: piliplus-tv-x86_64
+          path: build/app/outputs/flutter-apk/app-tv-release-x86_64.apk
           retention-days: 30
