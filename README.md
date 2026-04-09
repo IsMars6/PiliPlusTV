@@ -8,9 +8,9 @@
     <h1>PiliPlusTV</h1>
 <div align="center">
     
-![GitHub repo size](https://img.shields.io/github/repo-size/bggRGjQaUbCoE/PiliPlus) 
-![GitHub Repo stars](https://img.shields.io/github/stars/bggRGjQaUbCoE/PiliPlus) 
-![GitHub all releases](https://img.shields.io/github/downloads/bggRGjQaUbCoE/PiliPlus/total) 
+![GitHub repo size](https://img.shields.io/github/repo-size/IsMars6/PiliPlusTV) 
+![GitHub Repo stars](https://img.shields.io/github/stars/IsMars6/PiliPlusTV) 
+![GitHub all releases](https://img.shields.io/github/downloads/IsMars6/PiliPlusTV/total) 
 </div>
     <p>使用AI辅助基于 <a href="https://github.com/bggRGjQaUbCoE/PiliPlus" target="_blank">PiliPlus</a> 构建的Bilibili第三方TV客户端</p>
 
@@ -219,15 +219,20 @@
 
 <br/>
 
-## 声明
-
-此项目（PiliPlus）是个人为了兴趣而开发，仅用于学习和测试，请于下载后24小时内删除。
-所用API皆从官方网站收集，不提供任何破解内容。
-在此致敬原作者：[guozhigq/pilipala](https://github.com/guozhigq/pilipala)
-在此致敬上游作者：[orz12/PiliPalaX](https://github.com/orz12/PiliPalaX)
-本仓库做了更激进的修改，感谢原作者的开源精神。
-
-感谢使用
+## 项目声明
+ 
+本项目 PiliPlusTV 是基于 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)进行Android TV专属适配与优化开发，仅作为个人兴趣学习、技术研究与测试使用。
+ 
+- 本项目仅供学习交流与测试体验，请勿用于商业或非法用途，所有用户请于下载后 24 小时内删除。
+- 项目所使用 API 均来自官方公开接口，不提供任何破解、解析、代抓、翻墙等违规内容，不篡改、不劫持官方服务。
+- 本项目为衍生适配版本，在原 PiliPlus 基础上针对电视大屏、遥控器操作、布局排版、播放体验等进行深度改造。
+- 在此向所有原作者及上游项目致以诚挚敬意：
+- 原始核心项目：[guozhigq/pilipala](https://github.com/guozhigq/pilipala)
+- 上游衍生项目：[orz12/PiliPalaX](https://github.com/orz12/PiliPalaX)
+- 基础适配项目：[bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)
+- 本仓库在原有开源基础上做了更贴合 TV 平台的优化与调整，衷心感谢各位前辈的开源精神与无私分享。
+- 任何因使用本项目产生的法律责任、版权问题或设备风险，均由使用者自行承担，项目维护者不承担任何责任。
+- 如原作者或版权方认为本项目存在侵权行为，请及时联系仓库所有者进行下架或删除处理。
 
 
 <br/>
@@ -246,10 +251,10 @@
 
 ## Star History
 
-<a href="https://www.star-history.com/#bggRGjQaUbCoE/PiliPlus&Date">
+<a href="https://www.star-history.com/#IsMars6/PiliPlusTV&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=IsMars6/PiliPlusTV&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=IsMars6/PiliPlusTV&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=IsMars6/PiliPlusTV&type=Date" />
  </picture>
 </a>
