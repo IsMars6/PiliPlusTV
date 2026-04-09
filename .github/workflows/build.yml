@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release Tag (可选，填了则发Release)"
+        description: "Release Tag"
         required: false
         default: ""
 
@@ -23,7 +23,7 @@ jobs:
     permissions: write-all
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
@@ -45,46 +45,39 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
-      - name: Set build version
+      - name: Set version
         run: echo "version=TV-$(date +%Y%m%d-%H%M)" >> $GITHUB_ENV
 
-      - name: Build Android TV APK
+      # 关键修复：不用 flutter build，直接 gradle  assembleRelease，稳出 APK
+      - name: Build APK with Gradle
         run: |
-          flutter build apk \
-            --release \
-            --split-per-abi \
-            --target-platform android-arm,android-arm64,android-x64
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
 
-      - name: List generated apks
-        run: ls -la build/app/outputs/flutter-apk/
+      # 列出所有生成的 APK，确保能找到
+      - name: List all apks
+        run: find build -name "*.apk"
 
-      - name: Rename APKs
+      # 复制并重命名到根目录
+      - name: Rename & copy APKs
         run: |
-          cd build/app/outputs/flutter-apk
-          for apk in app-*-release.apk; do
-            abi=$(echo "$apk" | sed -E 's/app-(.*)-release\.apk/\1/')
-            mv "$apk" "../../../PiliPlus_TV_${{ env.version }}_${abi}.apk"
+          mkdir -p output
+          cp build/app/outputs/apk/release/*.apk output/
+          cd output
+          for f in *.apk; do
+            mv "$f" "../PiliPlus_TV_${{ env.version }}_$f"
           done
 
-      - name: Upload arm64-v8a
+      # 上传
+      - name: Upload all APKs
         uses: actions/upload-artifact@v7
         with:
-          name: PiliPlus_TV_arm64-v8a
-          path: PiliPlus_TV_*_arm64-v8a.apk
+          name: PiliPlus_TV_APKs
+          path: PiliPlus_TV_*.apk
 
-      - name: Upload armeabi-v7a
-        uses: actions/upload-artifact@v7
-        with:
-          name: PiliPlus_TV_armeabi-v7a
-          path: PiliPlus_TV_*_armeabi-v7a.apk
-
-      - name: Upload x86_64
-        uses: actions/upload-artifact@v7
-        with:
-          name: PiliPlus_TV_x86_64
-          path: PiliPlus_TV_*_x86_64.apk
-
-      - name: Create GitHub Release
+      # Release
+      - name: Create Release
         if: ${{ github.event.inputs.tag != '' }}
         uses: softprops/action-gh-release@v2
         with:
