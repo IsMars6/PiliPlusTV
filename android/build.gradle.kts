@@ -1,4 +1,8 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+plugins {
+    // 👇 关键修复：加上 AGP 和 Kotlin 插件版本（Flutter 3.41 必需）
+    id("com.android.application") version "8.1.0" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.0" apply false
+}
 
 allprojects {
     repositories {
