@@ -10,7 +10,7 @@ on:
         type: boolean
 
       tag:
-        description: "版本号（例如：v1.0，填写后将自动创建 Release）"
+        description: "版本号（例如：v2.0.3，填写后将自动创建 Release）"
         required: false
         default: ""
         type: string
@@ -71,24 +71,22 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: flutter build apk --release --flavor tv --split-per-abi --dart-define-from-file=pili_release.json --pub
 
-      - name: List output files
-        run: ls -la build/app/outputs/flutter-apk/
+      - name: 查看生成的APK文件名
+        run: ls -lh build/app/outputs/flutter-apk/
         shell: bash
 
       - name: Rename
         run: |
           cd build/app/outputs/flutter-apk
-          for apk in app-*.apk; do
-            if [[ $apk == app-tv-* ]]; then
-              abi=$(echo "$apk" | grep -oE '(arm64-v8a|armeabi-v7a|x86_64)')
-              mv -v "$apk" "../../../../PiliPlus_TV_${{ env.version }}_${abi}.apk"
-            fi
+          for file in app-tv-*.apk; do
+            abi=$(echo "$file" | grep -E -o 'arm64-v8a|armeabi-v7a|x86_64')
+            mv -v "$file" "../../../../PiliPlus_TV_${{ env.version }}_${abi}.apk"
           done
         shell: bash
 
       - name: Release
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '' }}
-        uses: softprops/softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag }}
           name: "PiliPlus TV ${{ github.event.inputs.tag }}"
