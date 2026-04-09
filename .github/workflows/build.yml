@@ -48,36 +48,39 @@ jobs:
       - name: Set version
         run: echo "version=TV-$(date +%Y%m%d-%H%M)" >> $GITHUB_ENV
 
-      # 关键修复：不用 flutter build，直接 gradle  assembleRelease，稳出 APK
-      - name: Build APK with Gradle
+      # 关键修复：加上 --no-tree-shake-icons 避免打包异常
+      - name: Flutter build APK
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleRelease --stacktrace
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --no-tree-shake-icons
 
-      # 列出所有生成的 APK，确保能找到
-      - name: List all apks
-        run: find build -name "*.apk"
+      # 搜索所有生成的 APK（不管路径在哪）
+      - name: Find all apks
+        run: find . -name "*.apk"
 
-      # 复制并重命名到根目录
-      - name: Rename & copy APKs
+      # 统一复制到根目录并重命名
+      - name: Copy and rename APKs
         run: |
-          mkdir -p output
-          cp build/app/outputs/apk/release/*.apk output/
-          cd output
-          for f in *.apk; do
-            mv "$f" "../PiliPlus_TV_${{ env.version }}_$f"
+          mkdir -p dist
+          find build/app/outputs/flutter-apk -name "app-*-release.apk" -exec cp {} dist/ \;
+          
+          cd dist
+          for apk in *.apk; do
+            abi=$(echo "$apk" | sed -E 's/app-(.+)-release\.apk/\1/')
+            mv "$apk" "../PiliPlus_TV_${{ env.version }}_${abi}.apk"
           done
 
       # 上传
-      - name: Upload all APKs
+      - name: Upload APKs
         uses: actions/upload-artifact@v7
         with:
           name: PiliPlus_TV_APKs
           path: PiliPlus_TV_*.apk
 
       # Release
-      - name: Create Release
+      - name: Create GitHub Release
         if: ${{ github.event.inputs.tag != '' }}
         uses: softprops/action-gh-release@v2
         with:
