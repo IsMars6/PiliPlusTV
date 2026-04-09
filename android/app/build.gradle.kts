@@ -4,7 +4,6 @@ import org.jetbrains.kotlin.konan.properties.Properties
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -64,13 +63,20 @@ android {
                     value = "PiliPlus dev",
                 )
             }
-//            proguardFiles(
-//                getDefaultProguardFile("proguard-android-optimize.txt"),
-//                "proguard-rules.pro"
-//            )
         }
         debug {
             applicationIdSuffix = ".debug"
+        }
+    }
+
+    // TV product flavor
+    productFlavors {
+        create("tv") {
+            dimension = "device"
+            applicationIdSuffix = ".tv"
+ 
+           versionNameSuffix = "-tv"
+            resValue("string", "app_name", "PiliPlus TV")
         }
     }
 
