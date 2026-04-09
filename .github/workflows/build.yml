@@ -1,157 +1,98 @@
-name: Build
+name: Build TV
 
 on:
-    pull_request:
-        types:
-            - opened
-            - synchronize
-            - reopened
-            - ready_for_review
-        paths-ignore:
-            - "**.md"
-    workflow_dispatch:
-        inputs:
-            build_android:
-                description: "Build Android TV"
-                required: false
-                default: true
-                type: boolean
-
-            build_ios:
-                description: "Build iOS"
-                required: false
-                default: false
-                type: boolean
-
-            build_mac:
-                description: "Build Mac"
-                required: false
-                default: false
-                type: boolean
-
-            build_win_x64:
-                description: "Build Win-x64"
-                required: false
-                default: false
-                type: boolean
-
-            build_linux_x64:
-                description: "Build Linux-x64"
-                required: false
-                default: false
-                type: boolean
-
-            tag:
-                description: "tag"
-                required: false
-                default: ""
-                type: string
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release Tag (可选，填了则发Release)"
+        required: false
+        default: ""
 
 jobs:
-    android:
-        if: ${{ github.event.inputs.build_android == 'true' }}
-        name: Release Android TV
-        runs-on: ubuntu-latest
-        permissions: write-all
+  android_tv:
+    name: Build Android TV APK
+    runs-on: ubuntu-latest
+    permissions: write-all
 
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0
-
-            - name: Setup Java
-              uses: actions/setup-java@v5
-              with:
-                  distribution: "zulu"
-                  java-version: "17"
-                  cache: "gradle"
-
-            - name: Setup Flutter
-              uses: subosito/flutter-action@v2
-              with:
-                  channel: stable
-                  flutter-version-file: pubspec.yaml
-                  cache: true
-
-            - name: Get dependencies
-              run: flutter pub get
-
-            - name: Set version
-              run: |
-                  echo "version=1.0.0-TV" >> $GITHUB_ENV
-              shell: bash
-
-            - name: Build TV Release APK (split per ABI)
-              run: |
-                flutter build apk \
-                  --release \
-                  --split-per-abi \
-                  --target-platform android-arm,android-arm64,android-x64
-              shell: bash
-
-            - name: List APKs (debug)
-              run: ls -la build/app/outputs/flutter-apk/
-
-            - name: Rename APKs for TV
-              run: |
-                cd build/app/outputs/flutter-apk
-                for f in app-*-release.apk; do
-                  abi=$(echo "$f" | sed -E 's/app-(.+)-release.apk/\1/')
-                  mv "$f" "../../../PiliPlus_TV_${{ env.version }}_${abi}.apk"
-                done
-              shell: bash
-
-            - name: Upload arm64-v8a
-              uses: actions/upload-artifact@v7
-              with:
-                  name: AndroidTV_arm64-v8a
-                  path: PiliPlus_TV_*_arm64-v8a.apk
-
-            - name: Upload armeabi-v7a
-              uses: actions/upload-artifact@v7
-              with:
-                  name: AndroidTV_armeabi-v7a
-                  path: PiliPlus_TV_*_armeabi-v7a.apk
-
-            - name: Upload x86_64
-              uses: actions/upload-artifact@v7
-              with:
-                  name: AndroidTV_x86_64
-                  path: PiliPlus_TV_*_x86_64.apk
-
-            - name: Create Release
-              if: ${{ github.event.inputs.tag != '' }}
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: ${{ github.event.inputs.tag }}
-                  files: PiliPlus_TV_*.apk
-
-    # 下面这些 TV 一般不需要，默认关闭
-    ios:
-        if: ${{ github.event.inputs.build_ios == 'true' }}
-        uses: ./.github/workflows/ios.yml
-        permissions: write-all
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
         with:
-            tag: ${{ github.event.inputs.tag }}
+          fetch-depth: 0
 
-    mac:
-        if: ${{ github.event.inputs.build_mac == 'true' }}
-        uses: ./.github/workflows/mac.yml
-        permissions: write-all
+      - name: Setup Java 17
+        uses: actions/setup-java@v5
         with:
-            tag: ${{ github.event.inputs.tag }}
+          distribution: "zulu"
+          java-version: "17"
+          cache: "gradle"
 
-    win_x64:
-        if: ${{ github.event.inputs.build_win_x64 == 'true' }}
-        uses: ./.github/workflows/win_x64.yml
-        permissions: write-all
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-            tag: ${{ github.event.inputs.tag }}
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
 
-    linux_x64:
-        if: ${{ github.event.inputs.build_linux_x64 == 'true' }}
-        uses: ./.github/workflows/linux_x64.yml
-        permissions: write-all
+      - name: Flutter pub get
+        run: flutter pub get
+
+      # 自定义版本号
+      - name: Set build version
+        run: echo "version=TV-$(date +%Y%m%d-%H%M)" >> $GITHUB_ENV
+
+      # 构建 APK（按 ABI 拆分）
+      - name: Build Android TV APK
+        run: |
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --target-platform android-arm,android-arm64,android-x64
+
+      # 查看生成的文件（调试用）
+      - name: List generated apks
+        run: ls -la build/app/outputs/flutter-apk/
+
+      # 重命名成你要的 PiliPlus_TV_xxx 格式
+      - name: Rename APKs
+        run: |
+          cd build/app/outputs/flutter-apk
+          for apk in app-*-release.apk; do
+            abi=$(echo "$apk" | sed -E 's/app-(.*)-release\.apk/\1/')
+            mv "$apk" "../../../PiliPlus_TV_${{ env.version }}_${abi}.apk"
+          done
+
+      # 上传三个架构
+      - name: Upload arm64-v8a
+        uses: actions/upload-artifact@v7
         with:
-            tag: ${{ github.event.inputs.tag }}
+          name: PiliPlus_TV_arm64-v8a
+          path: PiliPlus_TV_*_arm64-v8a.apk
+
+      - name: Upload armeabi-v7a
+        uses: actions/upload-artifact@v7
+        with:
+          name: PiliPlus_TV_armeabi-v7a
+          path: PiliPlus_TV_*_armeabi-v7a.apk
+
+      - name: Upload x86_64
+        uses: actions/upload-artifact@v7
+        with:
+          name: PiliPlus_TV_x86_64
+          path: PiliPlus_TV_*_x86_64.apk
+
+      # 填 tag 就自动发 Release
+      - name: Create GitHub Release
+        if: ${{ github.event.inputs.tag != '' }}
+        uses: softprops/gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          files: PiliPlus_TV_*.apk
