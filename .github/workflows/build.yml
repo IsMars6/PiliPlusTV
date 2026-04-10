@@ -43,8 +43,14 @@ jobs:
           flutter-version-file: pubspec.yaml
           cache: true
 
+      - name: Kill watchers
+        run: pkill -9 -f flutter || true
+
       - name: Flutter pub get
         run: flutter pub get
+
+      - name: Kill watchers again
+        run: pkill -9 -f dart || true
 
       - name: Set version
         if: github.event_name == 'workflow_dispatch'
