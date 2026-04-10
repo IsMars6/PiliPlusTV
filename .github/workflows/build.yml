@@ -18,7 +18,8 @@ on:
 
 jobs:
   android_tv:
-    name: Build Android TV APK
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
+    name: Build Android TV
     runs-on: ubuntu-latest
     permissions: write-all
 
@@ -34,9 +35,13 @@ jobs:
           distribution: "zulu"
           java-version: "17"
           cache: "gradle"
+          cache-dependency-path: |
+            android/*.gradle*
+            android/**/gradle-wrapper.properties
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
+        id: flutter
         with:
           channel: stable
           flutter-version-file: pubspec.yaml
@@ -46,42 +51,54 @@ jobs:
         run: flutter pub get
 
       - name: Set version
+        if: github.event_name == 'workflow_dispatch'
         run: echo "version=TV-$(date +%Y%m%d-%H%M)" >> $GITHUB_ENV
 
-      # 关键修复：加上 --no-tree-shake-icons 避免打包异常
-      - name: Flutter build APK
+      - name: Build Release APK
+        if: github.event_name == 'workflow_dispatch'
         run: |
           flutter build apk \
             --release \
             --split-per-abi \
             --no-tree-shake-icons
 
-      # 搜索所有生成的 APK（不管路径在哪）
-      - name: Find all apks
-        run: find . -name "*.apk"
+      - name: Build Dev APK
+        if: github.event_name == 'pull_request'
+        run: |
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --no-tree-shake-icons \
+            --dart-define=dev=1
 
-      # 统一复制到根目录并重命名
-      - name: Copy and rename APKs
+      - name: Rename
         run: |
           mkdir -p dist
-          find build/app/outputs/flutter-apk -name "app-*-release.apk" -exec cp {} dist/ \;
-          
-          cd dist
-          for apk in *.apk; do
-            abi=$(echo "$apk" | sed -E 's/app-(.+)-release\.apk/\1/')
-            mv "$apk" "../PiliPlus_TV_${{ env.version }}_${abi}.apk"
+          for file in build/app/outputs/flutter-apk/app-*-release.apk; do
+            abi=$(echo "$file" | sed -E 's|.*app-(.*)-release\.apk|\1|')
+            mv "$file" "PiliPlus_TV_${{ env.version }}_${abi}.apk"
           done
 
-      # 上传
-      - name: Upload APKs
+      - name: Upload arm64-v8a
         uses: actions/upload-artifact@v7
         with:
-          name: PiliPlus_TV_APKs
-          path: PiliPlus_TV_*.apk
+          name: Android_TV_arm64-v8a
+          path: PiliPlus_TV_*_arm64-v8a.apk
 
-      # Release
-      - name: Create GitHub Release
-        if: ${{ github.event.inputs.tag != '' }}
+      - name: Upload armeabi-v7a
+        uses: actions/upload-artifact@v7
+        with:
+          name: Android_TV_armeabi-v7a
+          path: PiliPlus_TV_*_armeabi-v7a.apk
+
+      - name: Upload x86_64
+        uses: actions/upload-artifact@v7
+        with:
+          name: Android_TV_x86_64
+          path: PiliPlus_TV_*_x86_64.apk
+
+      - name: Create Release
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag }}
