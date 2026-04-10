@@ -36,10 +36,13 @@ jobs:
         run: |
           flutter create --org com.example --project-name piliplus .
 
-      - name: Modify package name
+      - name: Modify package name and app label
         run: |
+          # 修改包名
           sed -i 's/com.example.piliplus/com.example.piliplus.tv/g' android/app/src/main/AndroidManifest.xml
           sed -i 's/com.example.piliplus/com.example.piliplus.tv/g' android/app/build.gradle.kts
+          # 修改应用名称
+          sed -i 's/android:label="piliplus"/android:label="PiliPlus TV"/g' android/app/src/main/AndroidManifest.xml
 
       - run: flutter pub get
 
