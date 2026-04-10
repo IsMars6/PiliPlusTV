@@ -39,36 +39,20 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version-file: pubspec.yaml
-
-      - name: Apply Patch
-        run: pwsh lib/scripts/patch.ps1 android
-        continue-on-error: true
 
       - name: Flutter pub get
         run: flutter pub get
 
       - name: Build Release APK
         if: github.event_name == 'workflow_dispatch'
-        run: |
-          rm -rf ~/.pub-cache/hosted/pub.dev/*/
-          flutter build apk --release --no-tree-shake-icons --pub
+        run: flutter build apk --release --no-tree-shake-icons --no-pub
 
       - name: Build Dev APK
         if: github.event_name == 'pull_request'
-        run: |
-          rm -rf ~/.pub-cache/hosted/pub.dev/*/
-          flutter build apk --release --no-tree-shake-icons --pub --dart-define=dev=1
+        run: flutter build apk --release --no-tree-shake-icons --no-pub --dart-define=dev=1
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
           name: PiliPlus_TV_APK
           path: build/app/outputs/flutter-apk/app-*.apk
-
-      - name: Create Release
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.event.inputs.tag }}
-          files: build/app/outputs/flutter-apk/app-*.apk
