@@ -43,26 +43,22 @@ jobs:
           flutter-version-file: pubspec.yaml
           cache: true
 
-      - name: Kill watchers
-        run: pkill -9 -f flutter || true
+      - name: Clean all
+        run: |
+          rm -rf build/ android/app/build/ android/build/ .dart_tool/
+          pkill -9 -f flutter || true
+          pkill -9 -f dart || true
 
       - name: Flutter pub get
-        run: flutter pub get
-
-      - name: Kill watchers again
-        run: pkill -9 -f dart || true
-
-      - name: Set version
-        if: github.event_name == 'workflow_dispatch'
-        run: echo "version=TV-$(date +%Y%m%d-%H%M)" >> $GITHUB_ENV
+        run: flutter pub get --offline
 
       - name: Build Release APK
         if: github.event_name == 'workflow_dispatch'
-        run: flutter build apk --release --no-tree-shake-icons
+        run: flutter build apk --release --no-tree-shake-icons --no-pub
 
       - name: Build Dev APK
         if: github.event_name == 'pull_request'
-        run: flutter build apk --release --no-tree-shake-icons --dart-define=dev=1
+        run: flutter build apk --release --no-tree-shake-icons --no-pub --dart-define=dev=1
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
