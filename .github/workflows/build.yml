@@ -46,11 +46,10 @@ jobs:
       - name: Clean all
         run: |
           rm -rf build/ android/app/build/ android/build/ .dart_tool/
-          pkill -9 -f flutter || true
-          pkill -9 -f dart || true
+          find android -name "GeneratedPluginRegistrant.java" -delete
 
       - name: Flutter pub get
-        run: flutter pub get --offline
+        run: flutter pub get
 
       - name: Build Release APK
         if: github.event_name == 'workflow_dispatch'
