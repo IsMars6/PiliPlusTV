@@ -36,16 +36,9 @@ jobs:
         run: |
           flutter create --org com.example --project-name piliplus .
 
-      - name: Set app name to PiliPlus TV
+      - name: Modify app name in manifest
         run: |
-          cat >> android/app/build.gradle.kts << 'GRADLE'
-
-          android {
-              defaultConfig {
-                  resValue("string", "app_name", "PiliPlus TV")
-              }
-          }
-          GRADLE
+          sed -i 's/android:label="piliplus"/android:label="PiliPlus TV"/g' android/app/src/main/AndroidManifest.xml
 
       - run: flutter pub get
 
