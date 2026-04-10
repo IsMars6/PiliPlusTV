@@ -27,17 +27,12 @@ jobs:
         run: |
           flutter create --org com.example --project-name piliplus .
 
-      - name: Set app name to PiliPlus TV
+      - name: Modify app name in manifest
         run: |
-          cat > android/app/build.gradle.kts.tmp << 'GRADLE'
-          android {
-              defaultConfig {
-                  resValue("string", "app_name", "PiliPlus TV")
-              }
-          }
-          GRADLE
-          # 在 android/app/build.gradle.kts 末尾添加
-          cat android/app/build.gradle.kts.tmp >> android/app/build.gradle.kts
+          # 修改 AndroidManifest.xml 中的 label
+          sed -i 's/android:label="piliplus"/android:label="PiliPlus TV"/g' android/app/src/main/AndroidManifest.xml
+          # 修改 strings.xml
+          sed -i 's/<string name="app_name">piliplus<\/string>/<string name="app_name">PiliPlus TV<\/string>/g' android/app/src/main/res/values/strings.xml 2>/dev/null || true
 
       - run: flutter pub get
 
