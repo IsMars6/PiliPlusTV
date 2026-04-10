@@ -27,22 +27,20 @@ jobs:
         run: |
           flutter create --org com.example --project-name piliplus .
 
-      - name: Modify app label and version
+      - name: Modify package name, app label and version
         run: |
+          # 修改包名
+          sed -i 's/com.example.piliplus/com.example.piliplus.tv/g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/com.example.piliplus/com.example.piliplus.tv/g' android/app/build.gradle.kts
           # 修改应用名称
           sed -i 's/android:label="piliplus"/android:label="PiliPlus TV"/g' android/app/src/main/AndroidManifest.xml
-
-      - run: flutter pub get
-
-      - name: Set version
-        if: github.event.inputs.tag != ''
-        run: echo "VERSION=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
-
-      - run: flutter build apk --release --split-per-abi
+          # 修改版本号 (使用Flutter的dart-defines)
+          VERSION=${{ github.event.inputs.tag || 'dev' }}
+          flutter build apk --release --split-per-abi --dart-define=VERSION=$VERSION
 
       - name: Rename APKs
         run: |
-          VERSION=${VERSION:-dev}
+          VERSION=${{ github.event.inputs.tag || 'dev' }}
           for file in build/app/outputs/flutter-apk/app-*-release.apk; do
             abi=$(echo "$file" | sed -E 's|.*app-(.*)-release\.apk|\1|')
             mv "$file" "PiliPlus_TV_${VERSION}_${abi}.apk"
